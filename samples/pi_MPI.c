@@ -46,19 +46,26 @@ int main(int argc, char* argv[])
     end = 1.0;
     a = start + my_rank*(end-start)/num_nodes;
     b = a + (end-start)/num_nodes;
+    double t1,t2,total_time;
+    t1 = MPI_Wtime();
     psum = integrate(a, b, num_steps, my_rank);
-            
+    t2 = MPI_Wtime();
+    total_time = t2-t1;
     if (my_rank != MASTER) {
         MPI_Send(&psum, 1, MPI_DOUBLE, MASTER, TAG, MPI_COMM_WORLD);
     }
     else {
         sum = psum;
+        t1 = MPI_Wtime();
         for (source = 1; source < num_nodes; source++) {
             MPI_Recv(&psum, 1, MPI_DOUBLE, source, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             sum = sum + psum;
         } 
+        t2 = MPI_Wtime();
+        total_time = total_time + (t2-t1);
         // PI = sum of 4 quadrants of unit circle
         printf("Pi: %2.6f\n", 4 * sum);
+        printf("Time integrate on master and to receive the answers from other processes %.9f\n",total_time);
     }
 
     MPI_Finalize();
