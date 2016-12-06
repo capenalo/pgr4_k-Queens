@@ -1,6 +1,6 @@
-// MPI-based computation of PI
-// demonstrates how to use rank to determine workload
-// gw
+// MPI-based computation of K-Queens
+// 
+// jcarcamo - capenalo
 
 #include <stdio.h>
 #include <stdlib.h>
