@@ -1,5 +1,5 @@
 // MPI-based computation of K-Queens
-// 
+//
 // jcarcamo - capenalo
 
 #include <stdio.h>
@@ -116,19 +116,26 @@ int main(int argc, char* argv[])
     }
     // number of rectangles to use per process
     board_size = atol (argv[1]);
-    solCount = 0;     
+    solCount = 0;
+
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &num_nodes);
-    
+
+    double t1,t2,total_time;
+
     int queen_pos = my_rank + 1;
     //safety check, we don't need scary overflows.
-    if(queen_pos <= board_size)
-    	kqueen_par(board_size, queen_pos); 
-    
-    
+    if(queen_pos <= board_size) {
+        t1 = MPI_Wtime();
+    	kqueen_par(board_size, queen_pos);
+        t2 = MPI_Wtime();
+        total_time = t2-t1;
+    }
+
+
     if (my_rank == MASTER) {
-        
+
         printf("\n\nStarting Parallel! #Nodes: %d \n\n",num_nodes);
         //1. check if num_nodes < board_size
         bool board_completed = true;
@@ -141,6 +148,7 @@ int main(int argc, char* argv[])
             if(board_size == current_pos){
                 board_completed = true;
             }
+            t1 = MPI_Wtime();
             for (source = 1; source < num_nodes; source++) {
                 pos_buff = current_pos + source;
                 if(pos_buff <= board_size){
@@ -150,17 +158,20 @@ int main(int argc, char* argv[])
                 }
             }
         }
-	for (source = 1; source < num_nodes; source++) {
+	    for (source = 1; source < num_nodes; source++) {
             pos_buff = -1;
             MPI_Send(&pos_buff, 1, MPI_INT, source, TAG, MPI_COMM_WORLD);
         }
-        //2. receive partial results 
+        //2. receive partial results
         total_sol = solCount;
         for (source = 1; source < num_nodes; source++) {
             MPI_Recv(&partial_sol, 1, MPI_LONG, source, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             total_sol+=partial_sol;
         }
+        t2 = MPI_Wtime();
+        total_time = total_time + (t2-t1);
         printf("\n\nTotal sol count:%d!\n\n",total_sol);
+        printf("Time to find k-queens solutions on master and to receive the answers from other processes %.9f\n",total_time);
     }
     else {
         bool waiting_for_work = true;
