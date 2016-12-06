@@ -116,13 +116,15 @@ int main(int argc, char* argv[])
     }
     // number of rectangles to use per process
     board_size = atol (argv[1]);
-    
+    solCount = 0;     
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &num_nodes);
     
     int queen_pos = my_rank + 1;
-    kqueen_par(board_size, queen_pos); 
+    //safety check, we don't need scary overflows.
+    if(queen_pos <= board_size)
+    	kqueen_par(board_size, queen_pos); 
     
     
     if (my_rank == MASTER) {
